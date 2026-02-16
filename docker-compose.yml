@@ -1,0 +1,59 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-inventory-app
+    restart: unless-stopped
+    working_dir: /var/www
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - smart-inventory
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  predictor:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: smart-inventory-predictor
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    networks:
+      - smart-inventory
+
+  mysql:
+    image: mysql:8.0
+    container_name: smart-inventory-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-smart_inventory_ai}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: ${DB_USERNAME:-laravel}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    networks:
+      - smart-inventory
+    # 127.0.0.1 força TCP (evita problema com socket). Senha deve ser "secret" ou igual a DB_PASSWORD.
+    healthcheck:
+      test: ["CMD", "sh", "-c", "MYSQL_PWD=secret mysqladmin ping -h127.0.0.1 -uroot --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 45s
+
+networks:
+  smart-inventory:
+    driver: bridge
+
+volumes:
+  mysql_data:
