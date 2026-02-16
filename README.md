@@ -44,7 +44,7 @@ O sistema detecta automaticamente produtos em risco (estoque baixo ou que vão e
 
 ## Screenshots
 
-| Dashboard (alertas + tendência + sugestão de reposição) | Produtos (com previsão de esgotamento) |
+| Dashboard (alertas + tendência + sugestão de reposição) | Vendas(sistemas de registro de Vendas) |Produtos (com previsão de esgotamento) | Graficos(Graficos de vendas e aviso de emergencia de estoque)|
 |--------------------------------------------------------|----------------------------------------|
 | ![Dashboard](docs/screenshot-dashboard.png) | ![Vendas](docs/screenshot-products.png) | ![Produtos](docs/Captura%20de%20tela%202026-02-16%20181818.png) | ![Graficos](docs/Captura%20de%20tela%202026-02-16%20181730.png) |
 
