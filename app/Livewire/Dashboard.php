@@ -47,7 +47,13 @@ class Dashboard extends Component
             }
             $days = $product->daysUntilStockOut();
             return $days !== null && $days >= 0 && $days <= self::ALERT_DAYS;
-        })->values();
+        })
+            ->sortBy([
+                fn ($p) => ! $p->isLowStock(),  // estoque abaixo do mínimo primeiro
+                fn ($p) => $p->daysUntilStockOut() ?? 9999,  // esgota mais cedo primeiro
+                fn ($p) => $p->stock_quantity,  // menor quantidade em estoque primeiro
+            ])
+            ->values();
 
         $since = now()->subDays(self::PROJECTION_DAYS);
         $restockSuggestions = [];

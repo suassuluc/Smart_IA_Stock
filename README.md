@@ -15,9 +15,9 @@ O **Smart Inventory AI** é um projeto full-stack que une:
 
 - **Backend web** em PHP (Laravel 12) com autenticação (Breeze), CRUD de produtos e vendas, e exportação em Excel.
 - **Interface reativa** com Livewire e Tailwind CSS.
-- **Módulo de IA** em Python: API REST que recebe histórico de vendas e estoque, calcula a taxa de consumo e devolve a data prevista de esgotamento por produto. O Laravel consome essa API, persiste as previsões e exibe alertas e sugestões no dashboard.
+- **Módulo de IA** em Python: API REST (FastAPI) que recebe histórico de vendas e estoque. Um modelo de **machine learning** (scikit-learn) aprende padrões de venda (sazonalidade semanal, tendência, consumo recente) e prevê o consumo diário esperado; com isso calcula a data prevista de esgotamento por produto. Quando há poucos dados, o serviço usa fallback por média simples. O Laravel consome essa API, persiste as previsões e exibe alertas e sugestões no dashboard.
 
-O sistema detecta automaticamente produtos em risco (estoque baixo ou que vão esgotar em poucos dias), sugere quantidades para repor e mostra a tendência de vendas em um gráfico semanal.
+O sistema detecta automaticamente produtos em risco (estoque baixo ou que vão esgotar em poucos dias), ordena os alertas pelos mais críticos (estoque abaixo do mínimo primeiro, depois os que esgotam mais cedo, depois os de menor quantidade em estoque). A **sugestão de reposição** exibe exatamente os produtos indicados no Alerta de Estoque, nessa mesma ordem, com a quantidade sugerida para repor. O dashboard também mostra a tendência de vendas em um gráfico semanal.
 
 ---
 
@@ -27,8 +27,8 @@ O sistema detecta automaticamente produtos em risco (estoque baixo ou que vão e
 |--------|-----------|
 | **Produtos** | CRUD completo (nome, SKU, descrição, preço, estoque atual, estoque mínimo). Listagem com busca e coluna de previsão de esgotamento. |
 | **Vendas** | Registro de vendas com múltiplos itens; estoque atualizado automaticamente. Filtros por data e exportação em Excel (.xlsx). |
-| **Dashboard** | Alertas de estoque (produtos em risco), **gráfico de tendência de vendas** (últimas 12 semanas) e **sugestão de reposição** com quantidade recomendada por produto. |
-| **Previsão por IA** | Serviço Python consome histórico e estoque; Laravel chama a API, grava previsões na base e agenda atualização diária (ex.: 6h). |
+| **Dashboard** | **Alertas de estoque** (produtos em risco, ordenados pelos mais críticos), **gráfico de tendência de vendas** (últimas 12 semanas) e **sugestão de reposição** com os mesmos produtos do alerta, na mesma ordem, e quantidade recomendada para repor. |
+| **Previsão por IA** | Serviço Python (ML com scikit-learn) aprende padrões de venda e prevê consumo; fallback por média quando há poucos dados. Laravel chama a API, grava previsões na base e agenda atualização diária (ex.: 6h). |
 
 ---
 
@@ -61,8 +61,8 @@ smart-inventory-ai/
 │   ├── Livewire/                                        # Componentes Livewire (Dashboard, Produtos, Vendas)
 │   ├── Models/                                          # Product, Sale, SaleItem, Prediction
 │   └── Services/                                        # ProductService, SaleService, StockPredictionService
-├── python/                                              # API de previsão (FastAPI)
-│   ├── main.py                                          # POST /predict, lógica com pandas
+├── python/                                              # API de previsão (FastAPI + scikit-learn)
+│   ├── main.py                                          # POST /predict: ML (features + RandomForest) e fallback por média
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── database/migrations/                                 # products, sales, sale_items, predictions
@@ -184,7 +184,7 @@ Os testes usam banco em memória (SQLite) e cobrem listagem/criação/edição/e
 - **Body:** `{ "products": [{ "id", "stock_quantity" }, ...], "sales_history": [{ "product_id", "sold_at", "quantity" }, ...] }`
 - **Resposta:** `{ "predictions": [{ "product_id", "predicted_until", "predicted_quantity", "days_until_stockout" }, ...] }`
 
-A lógica usa a média de unidades vendidas por dia (janela configurável, ex.: 90 dias) e estima a data em que o estoque chega a zero.
+A lógica principal usa **machine learning** (scikit-learn, Random Forest): o serviço monta features a partir do histórico (consumo nas últimas 1/2/4/12 semanas, tendência, sazonalidade por dia da semana, etc.), treina o modelo e prevê o consumo diário esperado; com isso calcula a data de esgotamento. Quando não há dados suficientes para treino (ex.: menos de 14 dias com vendas), é usado **fallback** por média simples (janela de 90 dias), mantendo o mesmo contrato da API.
 
 ---
 
