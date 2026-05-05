@@ -1,6 +1,7 @@
 # Smart Inventory AI
 
-[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![CI](https://github.com/suassuluc/Smart_IA_Stock/actions/workflows/ci.yml/badge.svg)](https://github.com/suassuluc/Smart_IA_Stock/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![Livewire](https://img.shields.io/badge/Livewire-3-FB70A9?logo=livewire&logoColor=white)](https://livewire.laravel.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -27,55 +28,62 @@ O sistema detecta automaticamente produtos em risco (estoque baixo ou que vão e
 |--------|-----------|
 | **Produtos** | CRUD completo (nome, SKU, descrição, preço, estoque atual, estoque mínimo). Listagem com busca e coluna de previsão de esgotamento. |
 | **Vendas** | Registro de vendas com múltiplos itens; estoque atualizado automaticamente. Filtros por data e exportação em Excel (.xlsx). |
-| **Dashboard** | **Alertas de estoque** (produtos em risco, ordenados pelos mais críticos), **gráfico de tendência de vendas** (últimas 12 semanas) e **sugestão de reposição** com os mesmos produtos do alerta, na mesma ordem, e quantidade recomendada para repor. |
+| **Dashboard** | **Alertas de estoque**, **gráfico de tendência de vendas** (últimas 12 semanas) e **sugestão de reposição** com os mesmos produtos do alerta, na mesma ordem, e quantidade recomendada para repor. |
 | **Previsão por IA** | Serviço Python (ML com scikit-learn) aprende padrões de venda e prevê consumo; fallback por média quando há poucos dados. Laravel chama a API, grava previsões na base e agenda atualização diária (ex.: 6h). |
 
 ---
 
 ## Stack tecnológica
 
-- **Backend:** PHP 8.2+, Laravel 12, Livewire 3, Laravel Breeze (auth), Maatwebsite Excel
-- **Frontend:** Blade, Tailwind CSS, Alpine.js, Chart.js
+- **Backend:** PHP 8.3+, Laravel 12, Livewire 3, Laravel Breeze (auth), Maatwebsite Excel
+- **Frontend:** Blade, Tailwind CSS, Alpine.js, Chart.js (via Vite)
 - **IA/Previsão:** Python 3.12, FastAPI, pandas, scikit-learn
 - **Banco:** MySQL 8
 - **Ambiente:** Docker (app PHP, MySQL, serviço predictor em Python)
 
 ---
 
-## Screenshots
+## Arquitetura
 
-| Dashboard (alertas + tendência + sugestão de reposição) | Vendas (sistema de registro de vendas) | Produtos (com previsão de esgotamento) | Gráficos (vendas + alerta de estoque) |
-|---|---|---|---|
-| ![Dashboard](docs/screenshot-dashboard.png) | ![Vendas](docs/screenshot-products.png) | ![Produtos](docs/Captura%20de%20tela%202026-02-16%20181818.png) | ![Graficos](docs/Captura%20de%20tela%202026-02-16%20181730.png) |
+```mermaid
+flowchart LR
+  subgraph browser [Browser]
+    UI[Blade_Livewire_Tailwind]
+  end
+  subgraph laravel [Laravel_app]
+    CRUD[Produtos_Vendas]
+    SVC[StockPredictionService]
+    DB[(MySQL)]
+  end
+  subgraph py [Python_predictor]
+    API[FastAPI_predict]
+    ML[RandomForest_fallback]
+  end
+  UI --> CRUD
+  CRUD --> DB
+  SVC -->|"HTTP POST /predict"| API
+  API --> ML
+  SVC --> DB
+```
 
-
+Integração HTTP: [`app/Services/StockPredictionService.php`](app/Services/StockPredictionService.php) envia o payload para `PREDICTOR_URL/predict` e persiste o resultado em `predictions`.
 
 ---
 
-## Estrutura do projeto
+## Screenshots
 
-```
-smart-inventory-ai/
-├── app/
-│   ├── Console/Commands/RefreshPredictionsCommand.php   # Comando para atualizar previsões
-│   ├── Livewire/                                        # Componentes Livewire (Dashboard, Produtos, Vendas)
-│   ├── Models/                                          # Product, Sale, SaleItem, Prediction
-│   └── Services/                                        # ProductService, SaleService, StockPredictionService
-├── python/                                              # API de previsão (FastAPI + scikit-learn)
-│   ├── main.py                                          # POST /predict: ML (features + RandomForest) e fallback por média
-│   ├── requirements.txt
-│   └── Dockerfile
-├── database/migrations/                                 # products, sales, sale_items, predictions
-├── routes/web.php
-└── docker-compose.yml                                   # app, mysql, predictor
-```
+| Dashboard | Vendas | Produtos | Gráficos |
+|-----------|--------|----------|----------|
+| ![Dashboard](docs/screenshot-dashboard.png) | ![Vendas](docs/screenshot-sales.png) | ![Produtos](docs/screenshot-products.png) | ![Gráficos](docs/screenshot-charts.png) |
+
+Os arquivos em `docs/` são imagens mínimas válidas (placeholder). Para o portfólio no GitHub, substitua por capturas reais da aplicação mantendo os mesmos nomes ou atualize as referências neste README (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ---
 
 ## Pré-requisitos
 
 - [Docker](https://www.docker.com/) e Docker Compose (recomendado), **ou**
-- PHP 8.2+, Composer, Node.js, MySQL (ou SQLite para testes)
+- PHP 8.3+, Composer, Node.js 22+ (recomendado para Vite 7), MySQL (ou SQLite para testes PHP)
 
 ---
 
@@ -86,8 +94,8 @@ smart-inventory-ai/
 1. **Clone o repositório e entre na pasta:**
 
    ```bash
-   git clone https://github.com/SEU_USUARIO/smart-inventory-ai.git
-   cd smart-inventory-ai
+   git clone https://github.com/suassuluc/Smart_IA_Stock.git
+   cd Smart_IA_Stock
    ```
 
 2. **Configure o ambiente:**
@@ -97,6 +105,8 @@ smart-inventory-ai/
    # Edite .env: DB_HOST=mysql, DB_USERNAME=laravel, DB_PASSWORD=secret, DB_DATABASE=smart_inventory_ai
    # Opcional: PREDICTOR_URL=http://predictor:8000 (já é o padrão com Docker)
    ```
+
+   O healthcheck do MySQL usa a mesma senha definida em `MYSQL_ROOT_PASSWORD` (derivada de `DB_PASSWORD` no compose). Se alterar `DB_PASSWORD`, mantenha coerência em todo o `.env` usado pelo Compose.
 
 3. **Suba os containers (app + MySQL + predictor):**
 
@@ -125,19 +135,20 @@ smart-inventory-ai/
 
 7. **Acesse a aplicação:**
 
-   - **App:** [http://localhost:8000](http://localhost:8000)  
-   - **API de previsão (health):** [http://localhost:8001/health](http://localhost:8001/health)
+   - **App:** [http://localhost:8000](http://localhost:8000)
+   - **API de previsão — health:** [http://localhost:8001/health](http://localhost:8001/health)
+   - **Documentação interativa da API (Swagger UI):** [http://localhost:8001/docs](http://localhost:8001/docs)
 
    Crie um usuário em **Register** e use **Dashboard**, **Produtos** e **Vendas** no menu.
 
 ### Sem Docker
 
-1. PHP 8.2+, Composer, Node, MySQL instalados.
+1. PHP 8.3+, Composer, Node.js, MySQL instalados.
 2. `composer install`, `cp .env.example .env`, `php artisan key:generate`.
 3. Configure `.env` com as credenciais do MySQL.
 4. `php artisan migrate`, `npm install`, `npm run build`.
 5. Suba a API Python (na pasta `python/`): `pip install -r requirements.txt` e `uvicorn main:app --reload`.
-6. No `.env` do Laravel: `PREDICTOR_URL=http://127.0.0.1:8000` (porta em que o uvicorn está rodando).
+6. No `.env` do Laravel: `PREDICTOR_URL=http://127.0.0.1:8000` (porta em que o uvicorn está a correr).
 7. `php artisan serve` e acesse [http://localhost:8000](http://localhost:8000) (ou a porta que o `serve` indicar).
 
 ---
@@ -166,6 +177,23 @@ Em ambiente Docker, o cron pode rodar dentro do container `app` ou em um worker 
 
 ---
 
+## API de previsão (Python)
+
+- **Endpoints:** `POST /predict`, `GET /health`
+- **Documentação OpenAPI:** `GET /docs` e `GET /redoc` (quando o serviço está em execução)
+- **Body:** `{ "products": [{ "id", "stock_quantity" }, ...], "sales_history": [{ "product_id", "sold_at", "quantity" }, ...] }`
+- **Resposta:** `{ "predictions": [{ "product_id", "predicted_until", "predicted_quantity", "days_until_stockout" }, ...] }`
+
+A lógica principal usa **machine learning** (scikit-learn, Random Forest): o serviço monta features a partir do histórico (consumo nas últimas 1/2/4/12 semanas, tendência, sazonalidade por dia da semana, etc.), treina o modelo e prevê o consumo diário esperado; com isso calcula a data de esgotamento. Quando não há dados suficientes para treino (ex.: menos de 14 dias com vendas por produto no fluxo de features), é usado **fallback** por média simples (janela de 90 dias), mantendo o mesmo contrato da API.
+
+### Limitações do modelo (importante para portfólio)
+
+- É uma **demonstração técnica**: não substitui planeamento comercial, nem previsão financeira ou de procura em mercado real.
+- Com **poucos dados de vendas**, o fallback por média domina; as datas são indicativas.
+- O modelo não incorpora feriados, campanhas ou rupturas de fornecimento — apenas histórico de vendas e stock atual.
+
+---
+
 ## Testes
 
 ```bash
@@ -174,17 +202,29 @@ php artisan test
 php artisan test tests/Livewire
 ```
 
-Os testes usam banco em memória (SQLite) e cobrem listagem/criação/edição/exclusão de produtos, registro de vendas com atualização de estoque e exportação Excel.
+Os testes PHP usam SQLite em memória (ver `phpunit.xml`).
+
+**Serviço Python:**
+
+```bash
+cd python && pytest -q
+```
 
 ---
 
-## API de previsão (Python)
+## Resolução de problemas
 
-- **Endpoint:** `POST /predict`
-- **Body:** `{ "products": [{ "id", "stock_quantity" }, ...], "sales_history": [{ "product_id", "sold_at", "quantity" }, ...] }`
-- **Resposta:** `{ "predictions": [{ "product_id", "predicted_until", "predicted_quantity", "days_until_stockout" }, ...] }`
+| Situação | O que fazer |
+|----------|-------------|
+| **Predictor offline** ao correr `predictions:refresh` | Verifique `PREDICTOR_URL` e se o container/serviço Python está a escutar; teste `curl http://localhost:8001/health` (Docker) ou a porta local do uvicorn. O Laravel regista falhas e pode lançar exceção — previsões antigas na base mantêm-se conforme o código atual. |
+| **Compose não sobe o app** | Confirme que o MySQL passou no healthcheck; alinhe `DB_PASSWORD` no `.env` com o esperado pelo serviço `mysql`. |
+| **Assets / gráfico no dashboard** | Execute `npm run build` (ou `npm run dev` em desenvolvimento); o Chart.js é empacotado via Vite (`resources/js/app.js`). |
 
-A lógica principal usa **machine learning** (scikit-learn, Random Forest): o serviço monta features a partir do histórico (consumo nas últimas 1/2/4/12 semanas, tendência, sazonalidade por dia da semana, etc.), treina o modelo e prevê o consumo diário esperado; com isso calcula a data de esgotamento. Quando não há dados suficientes para treino (ex.: menos de 14 dias com vendas), é usado **fallback** por média simples (janela de 90 dias), mantendo o mesmo contrato da API.
+---
+
+## Contribuindo
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -196,4 +236,4 @@ Este projeto está sob a licença [MIT](LICENSE).
 
 ## Autor
 
-Projeto desenvolvido como vitrine de portfólio. Se tiver dúvidas ou sugestões, sinta-se à vontade para abrir uma issue ou um pull request.
+Projeto desenvolvido como vitrine de portfólio. Dúvidas ou sugestões: issues ou pull requests no repositório.

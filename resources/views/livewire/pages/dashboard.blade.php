@@ -1,17 +1,20 @@
 <div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight mb-6">
-            {{ __('Dashboard') }}
-        </h2>
-
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+        <div>
+            <h2 class="font-semibold text-2xl text-gray-900 dark:text-gray-100 tracking-tight">
+                {{ __('Dashboard') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ __('Visão geral de alertas, tendência de vendas e sugestão de reposição.') }}
+            </p>
+        </div>
 
         @if ($alertProducts->isNotEmpty())
             @php
                 $alertCount = $alertProducts->count();
                 $limit = 10;
             @endphp
-            <div class="mb-8 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border-l-4 border-amber-500 dark:border-amber-500" x-data="{ expanded: false }">
+            <div class="mb-2 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl border border-amber-200/80 dark:border-amber-800/50 border-l-4 border-l-amber-500" x-data="{ expanded: false }">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                         {{ __('Alertas de estoque') }}
@@ -58,7 +61,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Gráfico de tendência de vendas -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl ring-1 ring-gray-200/80 dark:ring-gray-700/80">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                         {{ __('Tendência de vendas') }}
@@ -80,7 +83,7 @@
             </div>
 
             <!-- Sugestão de reposição -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-xl ring-1 ring-gray-200/80 dark:ring-gray-700/80">
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
                         {{ __('Sugestão de reposição') }}

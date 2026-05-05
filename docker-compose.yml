@@ -43,9 +43,9 @@ services:
       - "${DB_PORT:-3306}:3306"
     networks:
       - smart-inventory
-    # 127.0.0.1 força TCP (evita problema com socket). Senha deve ser "secret" ou igual a DB_PASSWORD.
+    # 127.0.0.1 força TCP (evita problema com socket). Usa a mesma senha de root definida em MYSQL_ROOT_PASSWORD.
     healthcheck:
-      test: ["CMD", "sh", "-c", "MYSQL_PWD=secret mysqladmin ping -h127.0.0.1 -uroot --silent"]
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 5s
       timeout: 5s
       retries: 15
