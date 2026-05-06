@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->validateCsrfTokens(except: [
+            'resend/*',
+        ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('predictions:refresh')->dailyAt('06:00');
